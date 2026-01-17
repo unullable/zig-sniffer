@@ -14,17 +14,21 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len != 2) {
-        print("usage: {s} <protocol(tcp/udp/icmp)>\n", .{args[0]});
+        print("usage: {s} <protocol(tcp/udp/icmp/http)>\n", .{args[0]});
         return;
     }
 
     var proto: u32 = undefined;
+    var http: bool = false;
     if (std.mem.indexOf(u8, args[1], "tcp") == 0) {
         proto = posix.IPPROTO.TCP;
     } else if (std.mem.indexOf(u8, args[1], "udp") == 0) {
         proto = posix.IPPROTO.UDP;
     } else if (std.mem.indexOf(u8, args[1], "icmp") == 0) {
         proto = posix.IPPROTO.ICMP;
+    } else if (std.mem.indexOf(u8, args[1], "http") == 0) {
+        proto = posix.IPPROTO.TCP;
+        http = true;
     }
 
     const sniffsock = try posix.socket(posix.AF.INET, posix.SOCK.RAW, proto);
@@ -46,28 +50,32 @@ pub fn main() !void {
         }
 
         iphdr.parse(&packet);
-        iphdr.print_ip_header();
+        //iphdr.print_ip_header();
 
         const iphdr_len: usize = @as(u8, iphdr.get_ihl()) * 4;
 
         switch (iphdr.get_proto()) {
             .tcp => {
                 tcphdr.parse(packet[iphdr_len..]);
-
-                tcphdr.print_tcp_header();
+                //tcphdr.print_tcp_header();
 
                 const doff: usize = @as(u8, tcphdr.get_doff()) * 4;
-                tcphdr.print_tcp_payload(packet[iphdr_len + doff .. buffer_len]);
+
+                if (http) {
+                    try tcphdr.log_http_payload(packet[iphdr_len + doff .. buffer_len]);
+                } else {
+                    try tcphdr.log_tcp_payload(packet[iphdr_len + doff .. buffer_len]);
+                }
             },
             .udp => {
                 udphdr.parse(packet[iphdr_len..]);
-                udphdr.print_udp_header();
-                udphdr.print_udp_payload(packet[iphdr_len + udphdr.get_header_size() .. buffer_len]);
+                //udphdr.print_udp_header();
+                try udphdr.log_udp_payload(packet[iphdr_len + udphdr.get_header_size() .. buffer_len]);
             },
             .icmp => {
                 icmphdr.parse(packet[iphdr_len..]);
-                icmphdr.print_icmp_header();
-                icmphdr.print_icmp_payload(packet[iphdr_len + icmphdr.get_header_size() .. buffer_len]);
+                //icmphdr.print_icmp_header();
+                try icmphdr.log_icmp_payload(packet[iphdr_len + icmphdr.get_header_size() .. buffer_len]);
             },
             .igmp => {
                 // todo

@@ -1,4 +1,5 @@
 const std = @import("std");
+const Logger = @import("logger.zig").Logger;
 const mem = std.mem;
 const print = std.debug.print;
 
@@ -43,8 +44,15 @@ pub const UdpHdr = struct {
     }
 
     pub fn print_udp_payload(_: UdpHdr, buf: []u8) void {
-        print("\n// Data Payload \\\\\n", .{});
+        print("\n// UDP Data Payload \\\\ \n", .{});
         print("{s}", .{buf});
-        print("\n\\\\ Data Payload //\n", .{});
+        print("\n\\\\ UDP Data Payload //\n", .{});
+    }
+
+    pub fn log_udp_payload(_: UdpHdr, buf: []u8) !void {
+        const logger = Logger.init("sniffer.udp.log");
+        try logger.write("\n// UDP Data Payload \\\\ \n");
+        try logger.write(buf);
+        try logger.write("\n \\\\ UDP Data Payload //\n");
     }
 };

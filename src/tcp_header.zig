@@ -1,4 +1,5 @@
 const std = @import("std");
+const Logger = @import("logger.zig").Logger;
 const mem = std.mem;
 const print = std.debug.print;
 const assert = std.debug.assert;
@@ -117,8 +118,36 @@ pub const TcpHdr = struct {
     }
 
     pub fn print_tcp_payload(_: TcpHdr, buf: []u8) void {
-        print("\n// Data Payload \\\\\n", .{});
+        print("\n// Data Payload \\\\ \n", .{});
         print("{s}\n", .{buf});
         print("\\\\ Data Payload //\n", .{});
+    }
+
+    pub fn log_tcp_payload(_: TcpHdr, buf: []u8) !void {
+        const logger = Logger.init("sniffer.tcp.log");
+        try logger.write("// TCP Data Payload [START] \\\\ \n");
+        try logger.write(buf);
+        try logger.write("\\\\ TCP Data Payload [END] // \n",);
+        try logger.write(buf);
+    }
+
+    pub fn print_http_payload(_: TcpHdr, buf: []u8) void {
+        if (std.mem.indexOf(u8, buf, "HTTP") == null) {
+            //std.debug.print("Non HTTP traffic!\n", .{});
+            return;
+        }
+        print("\n// HTTP Data Payload \\\\ \n", .{});
+        print("{s}\n", .{buf});
+        print("\\\\ HTTP Data Payload //\n", .{});
+    }
+
+    pub fn log_http_payload(_: TcpHdr, buf: []u8) !void {
+        if (std.mem.indexOf(u8, buf, "HTTP") == null)
+            return;
+        const logger = Logger.init("sniffer.http.log");
+        try logger.write("// HTTP Data Payload [START] \\ \n");
+        try logger.write(buf);
+        try logger.write("\\\\ HTTP Data Payload [END] //\n",);
+        try logger.write(buf);
     }
 };

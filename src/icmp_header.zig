@@ -1,4 +1,5 @@
 const std = @import("std");
+const Logger = @import("logger.zig").Logger;
 const mem = std.mem;
 const print = std.debug.print;
 
@@ -58,8 +59,16 @@ pub const IcmpHdr = struct {
     }
 
     pub fn print_icmp_payload(_: IcmpHdr, buf: []u8) void {
-        print("\n// Data Payload \\\\\n", .{});
+        print("\n// Data Payload \\\\ \n", .{});
         print("{s}\n", .{buf});
         print("\\\\ Data Payload //\n", .{});
+    }
+
+    pub fn log_icmp_payload(_: IcmpHdr, buf: []u8) !void {
+        const logger = Logger.init("sniffer.icmp.log");
+        try logger.write("// ICMP Data Payload [START] \\ \n");
+        try logger.write(buf);
+        try logger.write("\\\\ ICMP Data Payload [END] //\n",);
+        try logger.write(buf);
     }
 };
